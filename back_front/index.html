@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width" />
+        <link rel="stylesheet" type="text/css" href="static/styles.css" />
+        <title>
+            LAPTOP PARSER
+        </title>
+    </head>
+    <body>
+        <header>
+            <h1>LAPTOP PARSER</h1>
+        </header>
+        <div class="container">
+            <div id="description">
+            <h2 class="title">Возможности Laptop Parser</h2>
+                <p class="content" id="cont1">Laptop Parser позволяет получить характеристики
+                и оценки ноутбуков, отзывы о них на маркетплейсе Wildberries
+                для удобной фильтрации по 15-ти категориям.</p>
+                <p class="content" id="cont2">Вся информация в одном месте без переходов по множеству страниц.</p>
+                </div>
+            <div id="filtrs">
+                <div id="formMain" class="formMain">
+                    <h3 id="variants">Доступные фильтры</h3>
+                    <form id="myForm" name="myForm" hidden>
+                        <div id="div_price_with_a_discount">
+                        <h4 id="head_price_with_a_discount">Цена со скидкой</h4>
+                        <div class="divInner">
+                            <label for="price1">От:</label>
+                            <input type="number" name="price_with_a_discount" id="price1" />
+                        </div>
+                        <div class="divInner">
+                            <label for="price2">До:</label>
+                            <input type="number" name="price_with_a_discount"  id="price2" />
+                        </div>
+                        </div>
+                        <div id="div_the_diagonal_of_the_screen">
+                        <h4 id="head_the_diagonal_of_the_screen">Диагональ экрана</h4>
+                        <div class="divInner">
+                            <label for="diagonal1">От:</label>
+                            <input type="number" name="the_diagonal_of_the_screen" id="diagonal1"  />
+                        </div>
+                        <div class="divInner">
+                            <label for="diagonal2">До:</label>
+                            <input type="number" name="the_diagonal_of_the_screen" id="diagonal2"  />
+                        </div>
+                        </div>
+                        <div id="div_product_code">
+                        <h4 id="head_product_code">Артикул</h4>
+                        <div class="divInner">
+                            <input type="number" name="product_code" id="art1" />
+                        </div>
+                        </div>
+                    </form>
+                </div>
+                <div id="orderMain">
+                    <h3 id="orderList">Сортировка</h3>
+                    <form id="myOrder" hidden>
+                        <div class="divOrderInner">
+                        <input type="radio" class="sortedFiltrs" name="sortedFiltrs" id="priceFiltrs1" value="priceUp" />
+                        <label for="priceFiltrs1" id="priceLabel">По возрастанию цены</label>
+                        </div>
+                        <div class="divOrderInner">
+                        <input type="radio" class="sortedFiltrs" name="sortedFiltrs" id="priceFiltrs2" value="priceDown" />
+                        <label for="priceFiltrs2" id="priceLabel">По убыванию цены</span>
+                        </div>
+                        <div class="divOrderInner">
+                        <input type="radio" class="sortedFiltrs" name="sortedFiltrs" id="brandFiltrs" value="brandDown" />
+                        <label for="brandFiltrs" id="priceLabel">По рейтингу</span>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div id="info"></div>
+        </div>
+        <footer>
+            <p>Полный код парсера можно посмотреть по адресу: github.com</p>
+        </footer>
+    <script>
+        const myForm = document.myForm;
+          
+        function reset(){
+            myForm.reset();
+            for(let i=0; i<5;i++){
+                if(myForm.elements[i].hasAttribute("selected")){
+                    myForm.elements[i].removeAttribute("selected")
+                }
+            }
+        }
+
+    function prepareSending(){
+        myForm.setAttribute("hidden","yes");
+        myOrder.setAttribute("hidden","yes");
+        let selectList = [];
+        let selectOrderList = [];
+
+    for(let i=0;i<5;i++){
+        if(myForm.elements[i].hasAttribute("selected")){
+            selectList.push([myForm.elements[i].name,myForm.elements[i].value])
+        }
+    }
+    for(let i=5;i<myForm.elements.length;i++){
+        if(myForm.elements[i].checked==true){
+            selectList.push([myForm.elements[i].name,myForm.elements[i].value])
+        }
+    }
+    for(let i=0;i<selectList.length-1;i++){
+        if(selectList[i][0]==selectList[i+1][0]){
+            selectList[i][1]=[selectList[i][1],selectList[i+1][1]].flat();
+            const ind = selectList.indexOf(selectList[i+1]);
+            selectList.splice(ind,1);
+            i-=1;
+        }
+    }
+    for(let i=0;i<myOrder.elements.length;i++){
+        if(myOrder.elements[i].checked==true){
+            selectOrderList.push([myOrder.elements[i].name,myOrder.elements[i].value])
+        }
+    }
+    if(selectList.length<1){
+        selectList.push(["allfiltrs","all"])
+    }
+    if(selectOrderList.length<1){
+        selectOrderList.push(["sortedFiltrs","priceUp"])
+    }
+    
+    const selectObj = Object.fromEntries(selectList);
+    const selectOrderObj = Object.fromEntries(selectOrderList);
+    const uniformObj = {selectedList:selectObj, selectedOrderList:selectOrderObj}
+    syncURL(uniformObj);
+        }
+    
+
+    async function send(inform){
+        try{
+            const response = await fetch("/postdata", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify(inform)
+            });
+            if (response.ok) {
+                const data = await response.json();
+                const info = document.getElementById("info");
+                info.innerHTML = data.inform;
+                const carouselItems = document.getElementsByClassName("img_source");
+                const imageViewers = document.getElementsByClassName("img_viewer");
+                const fullImages = document.getElementsByClassName("modal_content");
+                const spanCloseEls = document.getElementsByClassName("close");
+                const photoBox = document.getElementById("boxin1"); 
+                const tableTitle = document.getElementsByClassName("tableTitle");
+                const reviewTitle = document.getElementsByClassName("review_title");
+                
+                for(let i=0; i<tableTitle.length; i++){
+                    tableTitle[i].addEventListener("click", function(e){
+                        tableTitle[i].nextElementSibling.classList.toggle("longTable");
+                    });  
+                }
+
+                for(let i=0; i<reviewTitle.length; i++){
+                    reviewTitle[i].addEventListener("click", function(e){
+                        reviewTitle[i].nextElementSibling.classList.toggle("review_body");
+                    });  
+                }
+
+
+                for(let i=0; i<carouselItems.length; i++){
+                    carouselItems[i].addEventListener("click", function(e){
+                        let src=carouselItems[i].getAttribute("src");
+                        fullImages[i].setAttribute("src",src);
+                        imageViewers[i].style.display = "flex";
+                    });  
+                }
+                for(let i=0; i<spanCloseEls.length; i++){
+                    spanCloseEls[i].addEventListener("click", function(e){
+                        imageViewers[i].style.display = "none";
+                    });
+                }
+                
+                const viewerRightArrows = document.getElementsByClassName("viewer_rightarrow");
+                const viewerLeftArrows = document.getElementsByClassName("viewer_leftarrow");
+
+                function goToPhoto(index, i){
+                    let photoIndex = 0;
+                    let src=carouselItems[index].getAttribute("src");
+                    fullImages[index].setAttribute("src",src);
+                    imageViewers[i].style.display = "none";
+                    imageViewers[index].style.display = "flex";
+                }
+                    for(let i=0; i<viewerRightArrows.length; i++){
+                        viewerRightArrows[i].addEventListener("click", function(e){
+                            photoRightNumber = viewerRightArrows[i].getAttribute("id").split("/")[1];
+                            totalPhoto = imageViewers[i].getAttribute("id").split("/")[2];
+                            if (photoRightNumber == totalPhoto) photoIndex = i-1;
+                            else photoIndex = i;
+                            goToPhoto(photoIndex+1, i)
+                        })
+                    }
+                    for(let i=0; i<viewerLeftArrows.length; i++){
+                        viewerLeftArrows[i].addEventListener("click", function(e){
+                            photoLeftNumber = viewerLeftArrows[i].getAttribute("id").split("/")[1];
+                            if (photoLeftNumber == 1) photoIndex = i+1;
+                            else photoIndex = i;
+                            goToPhoto(photoIndex-1, i)
+                        })
+                    }
+            
+                const rightArrows = document.getElementsByClassName("rightarrow");
+                const leftArrows = document.getElementsByClassName("leftarrow");
+                const rightArrowsBack = document.getElementsByClassName("arrowRightBackGround");
+                const leftArrowsBack = document.getElementsByClassName("arrowLeftBackGround");
+                const photoWrappers = document.getElementsByClassName("photo_box_wrapper");
+                const mainPhotos = document.getElementsByClassName("photo_main");
+                
+                for(let i=0; i<mainPhotos.length; i++){
+                    totalPhoto = mainPhotos[i].getAttribute("id").split("/")[1];
+                    if(totalPhoto<6){
+                        rightArrowsBack[i].style.display = "none";
+                        leftArrowsBack[i].style.display = "none";
+                    }
+                }
+
+                let currentIndex = Array.from({length:photoWrappers.length},(element)=>{
+                    element=0;
+                    return element
+                });
+                
+                
+
+                function goToSlide(newWidth,wholeWidth,visibleWidth, i){
+                    
+                    console.log("This is visible width: ", visibleWidth)
+                    console.log("This is new Width_1: ", newWidth);
+                    console.log("Whole Block Width: ", wholeWidth);
+                    
+
+                    if (newWidth < 0) {
+                        newWidth = 0;
+                    } 
+                    else if (newWidth >= wholeWidth-visibleWidth){
+                        newWidth = wholeWidth-visibleWidth-10;
+                        console.log("This is new Width_2: ", newWidth);
+                    }
+
+                    currentIndex[i] = newWidth;
+                    photoWrappers[i].style.transform = `translateX(-${currentIndex[i]+"px"})`
+                }
+
+                function determineWidth(i){
+                    const container = document.getElementById("container1/1");
+                    const onePhotoWidth = container.clientWidth+20;
+                    const visibleBlockWidth = photoBox.clientWidth;
+                    const wholePhotos = Math.floor(visibleBlockWidth/onePhotoWidth);
+                    const wholePhotosWidth = wholePhotos*onePhotoWidth;
+                    const wholeBlockWidth  = photoWrappers[i].getAttribute("id").split("/")[1]*onePhotoWidth;
+                    return [wholePhotosWidth,wholeBlockWidth,visibleBlockWidth]
+                }
+
+                    for(let i=0; i<rightArrows.length; i++){
+                        rightArrows[i].addEventListener("click", function(e){
+                            determineWidth(i);
+                            goToSlide(currentIndex[i]+determineWidth(i)[0], determineWidth(i)[1],determineWidth(i)[2], i)
+                        })
+                    }
+                    for(let i=0; i<leftArrows.length; i++){
+                        leftArrows[i].addEventListener("click", function(e){
+                            determineWidth(i);
+                            goToSlide(currentIndex[i]-determineWidth(i)[0],determineWidth(i)[1],determineWidth(i)[2], i)
+                        })
+                    }
+                }
+            else {
+                console.log(response);
+            }
+        }
+        catch(error){
+            console.log(error);
+        }
+    }
+    
+
+    list_of_values = []
+
+    async function getFiltrs(){
+     try{
+        const response = await fetch("/filtrs", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                const brand = data.brand.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+                const operatingSystem = data.operatingSystem.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+                const typeOfMatrix = data.typeOfMatrix.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+                const screenResolution = data.screenResolution.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+                const updateFrequency = data.updateFrequency.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+                const theRamVolumeGb = data.theRamVolumeGb.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+                const cpu = data.cpu.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+                const ssdVolume = data.ssdVolume.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+                const videoCard = data.videoCard.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+                const videoCardVolume = data.theVideoCardVolume.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+                const color = data.color.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+                const grade = data.grade.replace("[","").replace("]","").replaceAll(" '","").replaceAll("'","").split(",");
+
+                const minPrice = data.minPrice;
+                const maxPrice = data.maxPrice;
+                const minDiagonal = data.minDiagonal;
+                const maxDiagonal = data.maxDiagonal;
+                list_of_values.push(minPrice,maxPrice,minDiagonal,maxDiagonal);
+
+                const divMinPrice = document.getElementById("price1");
+                const divMaxPrice = document.getElementById("price2");
+                const divMinDiagonal = document.getElementById("diagonal1");
+                const divMaxDiagonal = document.getElementById("diagonal2");
+
+                divMinPrice.setAttribute("value", minPrice);
+                divMaxPrice.setAttribute("value", maxPrice);
+                divMinDiagonal.setAttribute("value", minDiagonal);
+                divMaxDiagonal.setAttribute("value", maxDiagonal);
+
+                const dict = new Map([["div_brand", brand],["div_operating_system", operatingSystem],
+                ["div_type_of_matrix", typeOfMatrix],["div_screen_resolution", screenResolution],
+                ["div_update_frequency", updateFrequency],["div_the_ram_volume_gb", theRamVolumeGb],
+                ["div_cpu", cpu],["div_ssd_volume", ssdVolume],["div_video_card", videoCard],
+                ["div_the_video_card_volume", videoCardVolume],["div_color", color],["div_grade", grade]]);
+                
+                dict.forEach(function(value, key, map){
+                    const div = document.createElement("div");
+                    div.setAttribute("id",key);
+                    const headDiv = document.createElement("h4");
+                    headDiv.setAttribute("id","head"+ key.replace("div",''));
+                    div.append(headDiv);
+                    if(value.length>1){
+                        for(let i=0;i<value.length;i++)
+                            {const divInner = document.createElement("div");
+                            divInner.setAttribute("class",key.replace("div_",'') + "Inner");
+                            const inputEl = document.createElement("input");
+                            inputEl.setAttribute("type","checkbox");
+                            inputEl.setAttribute("id", key.replace("div_",'')+i);
+                            inputEl.setAttribute("name", key.replace("div_",''));
+                            inputEl.setAttribute("class", key.replace("div_",''));
+                            inputEl.setAttribute("value",value[i]);
+                            const labelEl = document.createElement("label");
+                            labelEl.setAttribute("for",inputEl.id);
+                            labelEl.textContent = value[i];
+                            divInner.append(inputEl);
+                            divInner.append(labelEl);
+                            div.append(divInner);
+                            myForm.append(div);
+                            };
+                    }
+                    else {const divInner = document.createElement("div");
+                            divInner.setAttribute("class",key.replace("div_",'') + "Inner");
+                            const inputEl = document.createElement("input");
+                            inputEl.setAttribute("type","checkbox");
+                            inputEl.setAttribute("id", key.replace("div_",''));
+                            inputEl.setAttribute("name", key.replace("div_",''));
+                            inputEl.setAttribute("class", key.replace("div_",''));
+                            inputEl.setAttribute("value",value[0]);
+                            const labelEl = document.createElement("label");
+                            labelEl.setAttribute("for",inputEl.id);
+                            labelEl.textContent = value[0];
+                            divInner.append(inputEl);
+                            divInner.append(labelEl);
+                            div.append(divInner);
+                            myForm.append(div);
+                         }
+                    }
+                )
+
+
+                const headbrand = document.getElementById("head_brand");
+                headbrand.textContent = "Бренд";
+                const headoperatingSystem = document.getElementById("head_operating_system");
+                headoperatingSystem.textContent = "Операционная система";
+                const headtypeOfMatrix = document.getElementById("head_type_of_matrix");
+                headtypeOfMatrix.textContent = "Тип матрицы";
+                const headscreenResolution = document.getElementById("head_screen_resolution");
+                headscreenResolution.textContent = "Разрешение экрана";
+                const headupdateFrequency = document.getElementById("head_update_frequency");
+                headupdateFrequency.textContent = "Частота обновления экрана";
+                const headtheRamVolumeGb = document.getElementById("head_the_ram_volume_gb");
+                headtheRamVolumeGb.textContent = "Объём оперативной памяти";
+                const headcpu = document.getElementById("head_cpu");
+                headcpu.textContent = "Процессор";
+                const headssdVolume = document.getElementById("head_ssd_volume");
+                headssdVolume.textContent = "Объём накопителя SSD";
+                const headvideoCard = document.getElementById("head_video_card");
+                headvideoCard.textContent = "Видеокарта";
+                const headtheVideoCardVolume = document.getElementById("head_the_video_card_volume");
+                headtheVideoCardVolume.textContent = "Объём памяти видеокарты";
+                const headcolor = document.getElementById("head_color");
+                headcolor.textContent = "Цвет";
+                const headgrade = document.getElementById("head_grade");
+                headgrade.textContent = "Оценка";
+                
+                const divButton = document.createElement("div");
+                divButton.setAttribute("name", "divButton");
+                divButton.setAttribute("id", "divButton");
+
+                const BtnReset = document.createElement("input");
+                BtnReset.setAttribute("type","reset");
+                BtnReset.setAttribute("id","BtnReset");
+                BtnReset.setAttribute("value","Очистить");
+
+                const BtnSend = document.createElement("input");
+                BtnSend.setAttribute("type","button");
+                BtnSend.setAttribute("id","BtnSend");
+                BtnSend.setAttribute("value","Найти");
+
+                divButton.append(BtnReset);
+                divButton.append(BtnSend);
+                myForm.append(divButton);
+
+                myForm.addEventListener("reset", e=>reset());
+
+                BtnSend.addEventListener("click", function(e){
+                    e.preventDefault();
+                    prepareSending();
+                });
+            }
+
+            else{
+                console.log(response);
+            }
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
+    const variants = document.getElementById("variants");
+    variants.addEventListener("click",function(){
+                if(myForm.hasAttribute("hidden")){
+                    if(myForm[5]==undefined){
+                        myForm.removeAttribute("hidden");
+                        getFiltrs();
+                        myOrder.setAttribute("hidden","yes");
+                    }
+                    else{
+                        myForm.removeAttribute("hidden");
+                        myOrder.setAttribute("hidden","yes");
+                    }
+                }
+                else{
+                    myForm.setAttribute("hidden","yes");
+                }
+    });
+
+
+    for(let i=0; i<2;i++){
+        myForm.elements[i].addEventListener("change", function(){
+            if(parseInt(myForm.elements[i].value)<list_of_values[0]){
+                myForm.elements[i].value = list_of_values[0];
+            }
+            if(parseInt(myForm.elements[i].value)>list_of_values[1]){
+                myForm.elements[i].value = list_of_values[1];
+            }
+            if(i==0){
+                if(parseInt(myForm.elements[i].value)>(parseInt(myForm.elements[i+1].value))){
+                    myForm.elements[i+1].value = list_of_values[1];
+                }
+                if(myForm.elements[i].value == ""){
+                    myForm.elements[i].value = list_of_values[0];
+                }
+                myForm.elements[i].setAttribute("selected","yes");
+                myForm.elements[i+1].setAttribute("selected","yes");
+            }
+            else {
+                if(parseInt(myForm.elements[i].value)<(parseInt(myForm.elements[i-1].value))){
+                    myForm.elements[i-1].value = list_of_values[0];
+                }
+                if(myForm.elements[i].value == ""){
+                    myForm.elements[i].value = list_of_values[1];
+                }
+                myForm.elements[i].setAttribute("selected","yes");
+                myForm.elements[i-1].setAttribute("selected","yes");
+            }
+        })
+    }
+
+    for(let i=2; i<4;i++){
+        myForm.elements[i].addEventListener("change", function(){
+            if(parseInt(myForm.elements[i].value)<list_of_values[2]){
+                myForm.elements[i].value = list_of_values[2];
+            }
+            if(parseInt(myForm.elements[i].value)>list_of_values[3]){
+                myForm.elements[i].value = list_of_values[3];
+            }
+            if(i==2){
+                if(parseInt(myForm.elements[i].value)>(parseInt(myForm.elements[i+1].value))){
+                    myForm.elements[i+1].value = list_of_values[3];
+                }
+                if(myForm.elements[i].value == ""){
+                    myForm.elements[i].value = list_of_values[2];
+                }
+                myForm.elements[i].setAttribute("selected","yes");
+                myForm.elements[i+1].setAttribute("selected","yes");
+            }
+            else {
+                if(parseInt(myForm.elements[i].value)<(parseInt(myForm.elements[i-1].value))){
+                    myForm.elements[i-1].value = list_of_values[2];
+                }
+                if(myForm.elements[i].value == ""){
+                    myForm.elements[i].value = list_of_values[3];
+                }
+                myForm.elements[i].setAttribute("selected","yes");
+                myForm.elements[i-1].setAttribute("selected","yes");
+            }
+        })
+    }
+
+
+    const artic = document.getElementById("art1");
+    artic.addEventListener("change",function(e){
+        if(e.target.value>0){
+            e.target.setAttribute("selected","yes");
+        }
+        else {
+            e.target.value="";
+        }
+    })
+
+    const orderList = document.getElementById("orderList");
+    const myOrder = document.getElementById("myOrder");
+    orderList.addEventListener("click", function(){
+        if(myOrder.hasAttribute("hidden")){
+            myOrder.removeAttribute("hidden");
+            myForm.setAttribute("hidden","yes");
+        }
+        else{
+            myOrder.setAttribute("hidden","yes");
+        }
+    })
+
+    for(let i=0; i<myOrder.elements.length;i++){
+        myOrder.elements[i].addEventListener("click", prepareSending)
+    }
+      
+
+function transformToURLParams(filters) {
+    a=[];
+    for(n in filters){
+        const query = Object.entries(filters[n])
+        .map(([key, value]) => {
+        a.push(`${key}=${value}`)
+        })  
+    }
+    b=a.join('&');
+    console.log(b);
+    return `?${b}`
+}
+
+function syncURL(filters) {
+    const path = document.location.pathname
+    const query = transformToURLParams(filters)
+    const url = document.location.origin+path+query;
+    console.log(url+" yes");
+    console.log(history.state.url+" yes1");
+    if(history.state.url!=url){
+        send(filters);
+        window.history.pushState(Object.assign({filters},{url:`${url}`}),'',`${path}${query}`);
+        console.log(history.state);
+    }
+}
+
+window.addEventListener("popstate", (event)=>{
+    if(event.state){
+        const c = event.state.filters;
+        send(c);
+        reset();
+    }
+})
+
+window.history.replaceState({url:"http://127.0.0.1:8000/00"},'');
+
+    </script>
+    </body>
+</html>
