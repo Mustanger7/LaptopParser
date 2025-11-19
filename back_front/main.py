@@ -124,9 +124,12 @@ def postdata(data= Body()):
     
     for i in range(len(key_rus_list)):
         if len(key_rus_list)>1:
-            inform+= str(key_rus_list[i])+": "+ str(value_list[i]) + ", "
+            inform+= str(key_rus_list[i])+": "+ str(value_list[i]) + "; "
         else:
             inform+= str(key_rus_list[i])+": "+ str(value_list[i])
+    
+    if inform.endswith("; "):
+        inform = inform.removesuffix("; ")
     inform+= "</div>"
 
     inform+= "<div class='divSpan'><span class='chosenSpan'>Сортировано: </span>"
