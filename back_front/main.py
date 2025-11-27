@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Body
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from fastapi.responses import HTMLResponse
 import wb_laptop_bd_command
 import wb_laptop_parser
  
