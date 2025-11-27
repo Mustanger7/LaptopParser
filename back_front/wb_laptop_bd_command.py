@@ -1,5 +1,5 @@
 import psycopg2
-from psycopg2 import connect, OperationalError
+from psycopg2 import OperationalError
 
 
 def create_connection(db_name, db_user, db_password, db_host, db_port):
@@ -199,7 +199,6 @@ def check_news(title):
 
 def get_data_from_db():
     cursor = connection.cursor()
-    result = None
     try:
         cursor.execute(select_info)
         data_set = cursor.fetchall()
@@ -211,7 +210,6 @@ select_info = """SELECT * FROM features"""
 
 def get_distinct_data_from_db(parameter):
     cursor = connection.cursor()
-    result = None
     try:
         cursor.execute(f"""SELECT distinct {parameter} from features""")
         data_set = cursor.fetchall()
@@ -221,7 +219,6 @@ def get_distinct_data_from_db(parameter):
 
 def get_filtr_from_db(query):
     cursor = connection.cursor()
-    result = None
     try:
         cursor.execute(f"""{query}""")
         data_set = cursor.fetchall()
@@ -231,7 +228,6 @@ def get_filtr_from_db(query):
 
 def get_columns_from_db():
     cursor = connection.cursor()
-    result = None
     try:
         cursor.execute(all_columns)
         data_set = cursor.fetchall()
