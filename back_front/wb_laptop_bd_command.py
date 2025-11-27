@@ -184,7 +184,7 @@ def check_news(title):
     connection.autocommit = True
     cursor = connection.cursor()
     try:
-        query = """Select product_code from features where product_code = %s """ % title
+        query = "Select product_code from features where product_code = %s" % title
         cursor.execute(query)
         result = cursor.fetchall()
         if len(result) == 0:
@@ -200,18 +200,17 @@ def check_news(title):
 def get_data_from_db():
     cursor = connection.cursor()
     try:
-        cursor.execute(select_info)
+        cursor.execute("SELECT * FROM features")
         data_set = cursor.fetchall()
         return data_set
     except OperationalError as e:
         print(f"The error '{e}' occurred")
 
-select_info = """SELECT * FROM features"""
 
 def get_distinct_data_from_db(parameter):
     cursor = connection.cursor()
     try:
-        cursor.execute(f"""SELECT distinct {parameter} from features""")
+        cursor.execute(f"SELECT distinct {parameter} from features")
         data_set = cursor.fetchall()
         return data_set
     except OperationalError as e:
@@ -220,7 +219,7 @@ def get_distinct_data_from_db(parameter):
 def get_filtr_from_db(query):
     cursor = connection.cursor()
     try:
-        cursor.execute(f"""{query}""")
+        cursor.execute(f"{query}")
         data_set = cursor.fetchall()
         return data_set
     except OperationalError as e:
@@ -229,11 +228,9 @@ def get_filtr_from_db(query):
 def get_columns_from_db():
     cursor = connection.cursor()
     try:
-        cursor.execute(all_columns)
+        cursor.execute("""SELECT column_name FROM information_schema.columns 
+                       WHERE table_name = 'features' ORDER BY ordinal_position""")
         data_set = cursor.fetchall()
         return data_set
     except OperationalError as e:
         print(f"The error '{e}' occurred")
-
-all_columns = """SELECT column_name FROM information_schema.columns 
-WHERE table_name = 'features' ORDER BY ordinal_position"""
